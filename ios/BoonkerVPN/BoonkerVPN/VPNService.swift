@@ -46,10 +46,9 @@ final class VPNService: ObservableObject {
             manager.isEnabled = true
             try await manager.saveToPreferences()
             try manager.connection.startVPNTunnel()
+            try await waitForConnection(manager.connection)
             state = .connected
         } catch {
-            // The app target is deliberately honest until the Packet Tunnel
-            // Provider is added and receives a real WireGuard configuration.
             state = .failed(error.localizedDescription)
         }
     }
@@ -90,5 +89,39 @@ final class VPNService: ObservableObject {
         created.isEnabled = true
         try await created.saveToPreferences()
         return created
+    }
+
+    private func waitForConnection(_ connection: NEVPNConnection) async throws {
+        for _ in 0..<30 {
+            switch connection.status {
+            case .connected, .reasserting:
+                return
+            case .disconnected, .invalid:
+                throw VPNServiceError.tunnelDisconnected
+            case .connecting, .disconnecting:
+                try await Task.sleep(nanoseconds: 500_000_000)
+            @unknown default:
+                throw VPNServiceError.unknownTunnelStatus
+            }
+        }
+
+        throw VPNServiceError.connectionTimedOut
+    }
+}
+
+private enum VPNServiceError: LocalizedError {
+    case tunnelDisconnected
+    case connectionTimedOut
+    case unknownTunnelStatus
+
+    var errorDescription: String? {
+        switch self {
+        case .tunnelDisconnected:
+            "The VPN tunnel disconnected before it became active."
+        case .connectionTimedOut:
+            "The VPN tunnel did not connect within the expected time."
+        case .unknownTunnelStatus:
+            "The VPN returned an unknown connection status."
+        }
     }
 }
