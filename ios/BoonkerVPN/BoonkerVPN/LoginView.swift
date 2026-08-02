@@ -38,11 +38,15 @@ struct LoginView: View {
         errorMessage = nil
         Task {
             do {
-                let service = AuthService(api: BoonkerAPI(baseURL: URL(string: "https://api.boonker.example")!))
+                guard let api = BoonkerAPI.configured() else {
+                    throw BoonkerAPIError.configurationMissing
+                }
+                let service = AuthService(api: api)
                 try await service.login(email: email, password: password)
                 onAuthenticated()
             } catch {
-                errorMessage = "Unable to sign in. Check your details and try again."
+                errorMessage = (error as? LocalizedError)?.errorDescription
+                    ?? "Unable to sign in. Check your details and try again."
             }
             isLoading = false
         }

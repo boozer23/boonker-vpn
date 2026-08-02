@@ -18,6 +18,8 @@
 	<string>1</string>
 	<key>CFBundleDisplayName</key>
 	<string>Boonker</string>
+	<key>BoonkerAPIBaseURL</key>
+	<string>https://api.boonker.example</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIRequiresFullScreen</key>

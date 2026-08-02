@@ -48,6 +48,7 @@ enum BoonkerAPIError: LocalizedError {
     case unauthorized
     case premiumRequired
     case serverUnavailable
+    case configurationMissing
 
     var errorDescription: String? {
         switch self {
@@ -55,6 +56,7 @@ enum BoonkerAPIError: LocalizedError {
         case .unauthorized: "Your session has expired."
         case .premiumRequired: "This location requires a Premium plan."
         case .serverUnavailable: "The server is temporarily unavailable."
+        case .configurationMissing: "The VPN service is not configured yet."
         }
     }
 }
@@ -62,6 +64,18 @@ enum BoonkerAPIError: LocalizedError {
 struct BoonkerAPI {
     let baseURL: URL
     var session: URLSession = .shared
+
+    static func configured(bundle: Bundle = .main) -> BoonkerAPI? {
+        guard let value = bundle.object(forInfoDictionaryKey: "BoonkerAPIBaseURL") as? String,
+              let url = URL(string: value),
+              let scheme = url.scheme,
+              ["https", "http"].contains(scheme),
+              url.host != nil else {
+            return nil
+        }
+
+        return BoonkerAPI(baseURL: url)
+    }
 
     func locations(token: String?) async throws -> [ServerLocationDTO] {
         let url = baseURL.appendingPathComponent("v1/locations")
