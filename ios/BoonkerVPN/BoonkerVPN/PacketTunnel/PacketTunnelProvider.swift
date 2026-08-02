@@ -5,20 +5,26 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         guard let configuration = (protocolConfiguration as? NETunnelProviderProtocol)?.providerConfiguration,
               let address = configuration["address"] as? String,
               let dns = configuration["dns"] as? String,
-              configuration["privateKey"] as? String != nil,
-              configuration["serverPublicKey"] as? String != nil,
-              configuration["server"] as? String != nil else {
+              let privateKey = configuration["privateKey"] as? String,
+              let serverPublicKey = configuration["serverPublicKey"] as? String,
+              let server = configuration["server"] as? String,
+              !privateKey.isEmpty,
+              privateKey != "pending",
+              !serverPublicKey.isEmpty,
+              !server.isEmpty else {
             throw NSError(domain: "BoonkerVPN", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing tunnel configuration"])
         }
 
-        let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
-        settings.ipv4Settings = NEIPv4Settings(addresses: [address], subnetMasks: ["255.255.255.255"])
-        settings.ipv4Settings?.includedRoutes = [NEIPv4Route.default()]
-        settings.dnsSettings = NEDNSSettings(servers: [dns])
-        settings.mtu = 1280
-        try await setTunnelNetworkSettings(settings)
+        // Do not install a default route until a real WireGuard engine is
+        // attached. A placeholder tunnel would otherwise black-hole traffic.
+        throw NSError(
+            domain: "BoonkerVPN",
+            code: 2,
+            userInfo: [NSLocalizedDescriptionKey: "WireGuard engine is not configured yet"]
+        )
 
-        // WireGuard userspace engine will be attached here next.
+        // WireGuard userspace engine will be attached here next. Until then,
+        // the provider fails closed instead of creating a black-hole tunnel.
     }
 
     override func stopTunnel(with reason: NEProviderStopReason) async {
