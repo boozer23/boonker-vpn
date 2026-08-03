@@ -1,5 +1,7 @@
 # Boonker VPN
 
+**Language:** [English](README.md) | [Русский](README.ru.md)
+
 Mobile-first VPN prototype for iOS with the Boonker interface.
 
 ## Included
